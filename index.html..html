@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monochrome Bible</title>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #111111;
+            --subtext: #666666;
+            --border-color: #dddddd;
+            --hover-color: #f4f4f4;
+            --active: #111111;
+            --active-text: #ffffff;
+            --font-family: 'Calibri', 'Candara', 'Segoe UI', Optima, Arial, sans-serif;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --subtext: #888888;
+            --border-color: #333333;
+            --hover-color: #1e1e1e;
+            --active: #ffffff;
+            --active-text: #000000;
+        }
+
+        body.serif-mode {
+            --font-family: "Georgia", "Times New Roman", serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            transition: background 0.3s, color 0.3s;
+            position: relative;
+        }
+
+        /* Cover Screen Overlay */
+        #coverPage {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            text-align: center;
+            padding: 20px;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        #coverPage.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .cover-cross {
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            letter-spacing: 2px;
+        }
+
+        .cover-title {
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+        }
+
+        .cover-subtitle {
+            font-size: 0.9rem;
+            color: var(--subtext);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 40px;
+        }
+
+        .btn-open {
+            background: none;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            padding: 12px 28px;
+            font-size: 0.95rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .btn-open:hover {
+            background-color: var(--text-color);
+            color: var(--bg-color);
+        }
+
+        .container {
+            width: 100%;
+            max-width: 720px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            margin: 0;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-family: inherit;
+            border-radius: 4px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--hover-color);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .search-box input {
+            flex: 1;
+        }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        @media (max-width: 500px) {
+            .controls {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input, select {
+            background: var(--bg-color);
+            color: var(--text-color);
+            border: 1px solid var(--border-color);
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            outline: none;
+            width: 100%;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--text-color);
+        }
+
+        .reader-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+        }
+
+        .font-options {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .passage-container {
+            font-size: 1.15rem;
+            margin-bottom: 30px;
+            min-height: 200px;
+        }
+
+        .passage-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        .verse {
+            margin-bottom: 12px;
+            position: relative;
+            line-height: 1.6;
+        }
+
+        .verse-num {
+            font-size: 0.75rem;
+            vertical-align: super;
+            font-weight: bold;
+            color: var(--subtext);
+            margin-right: 4px;
+        }
+
+        .loading, .error {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--subtext);
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            border-top: 1px solid var(--border-color);
+            padding-top: 20px;
+        }
+
+        .bookmarks-section {
+            margin-top: 40px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 20px;
+        }
+
+        .bookmarks-header {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        .bookmark-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.9rem;
+        }
+
+        .bookmark-item span {
+            cursor: pointer;
+        }
+
+        .bookmark-item span:hover {
+            text-decoration: underline;
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--text-color);
+            color: var(--bg-color);
+            padding: 10px 16px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .toast.show {
+            display: block;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body data-theme="light">
+
+    <!-- Cover Page Overlay -->
+    <div id="coverPage">
+        <div class="cover-cross">✝</div>
+        <div class="cover-title">The Holy Bible</div>
+        <div class="cover-subtitle">Monochrome Edition</div>
+        <button class="btn-open" onclick="openApp()">Open Reader</button>
+    </div>
+
+    <!-- Main App Container -->
+    <div class="container">
+        <header>
+            <h1 onclick="showCover()" title="Click to view cover">The Bible</h1>
+            <div class="header-actions">
+                <button id="fontToggle" onclick="toggleFont()">Serif</button>
+                <button id="themeToggle" onclick="toggleTheme()">Dark</button>
+            </div>
+        </header>
+
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Search book or reference (e.g. John 3:16, Genesis, Psalm 23)" onkeypress="handleSearchKey(event)">
+            <button onclick="performSearch()">Search</button>
+        </div>
+
+        <div class="controls">
+            <select id="bookSelect" onchange="onBookChange()">
+                <!-- Populated via JS -->
+            </select>
+            <input type="number" id="chapterInput" min="1" value="1" onchange="onChapterChange()">
+            <select id="translationSelect" onchange="fetchPassage()">
+                <option value="web">WEB (World English)</option>
+                <option value="tagalog">Tagalog / Filipino (Ang Biblia)</option>
+                <option value="kjv">KJV (King James)</option>
+                <option value="bbe">BBE (Basic English)</option>
+                <option value="asv">ASV (American Standard)</option>
+            </select>
+        </div>
+
+        <div class="reader-controls">
+            <div class="font-options">
+                <span>Size:</span>
+                <button onclick="changeFontSize(-1)">A-</button>
+                <button onclick="changeFontSize(1)">A+</button>
+            </div>
+            <div>
+                <button onclick="bookmarkCurrent()">Bookmark Passage</button>
+            </div>
+        </div>
+
+        <main class="passage-container" id="passageContent">
+            <div class="loading">Loading scripture...</div>
+        </main>
+
+        <div class="nav-buttons">
+            <button onclick="navigateChapter(-1)">&larr; Previous Chapter</button>
+            <button onclick="navigateChapter(1)">Next Chapter &rarr;</button>
+        </div>
+
+        <section class="bookmarks-section">
+            <div class="bookmarks-header">Saved Bookmarks</div>
+            <div id="bookmarksList">
+                <div style="color: var(--subtext); font-size: 0.9rem;">No saved bookmarks.</div>
+            </div>
+        </section>
+    </div>
+
+    <div id="toast" class="toast">Action completed</div>
+
+    <script>
+        const BOOKS = [
+            "Genesis", "Exodus", "Leviticus", "Numbers", "Deuteronomy", "Joshua", "Judges", "Ruth",
+            "1 Samuel", "2 Samuel", "1 Kings", "2 Kings", "1 Chronicles", "2 Chronicles", "Ezra", "Nehemiah",
+            "Esther", "Job", "Psalms", "Proverbs", "Ecclesiastes", "Song of Solomon", "Isaiah", "Jeremiah",
+            "Lamentations", "Ezekiel", "Daniel", "Hosea", "Joel", "Amos", "Obadiah", "Jonah", "Micah",
+            "Nahum", "Habakkuk", "Zephaniah", "Haggai", "Zechariah", "Malachi",
+            "Matthew", "Mark", "Luke", "John", "Acts", "Romans", "1 Corinthians", "2 Corinthians",
+            "Galatians", "Ephesians", "Philippians", "Colossians", "1 Thessalonians", "2 Thessalonians",
+            "1 Timothy", "2 Timothy", "Titus", "Philemon", "Hebrews", "James", "1 Peter", "2 Peter",
+            "1 John", "2 John", "3 John", "Jude", "Revelation"
+        ];
+
+        // Tagalog Book Names Mapped to English
+        const TAGALOG_BOOKS_MAP = {
+            "mga awit": "Psalms", "awit": "Psalms", "juan": "John", "mateo": "Matthew",
+            "marcos": "Mark", "lucas": "Luke", "mga gawa": "Acts", "gawa": "Acts",
+            "roma": "Romans", "pahayag": "Revelation", "kawikaan": "Proverbs", "genesis": "Genesis",
+            "exodo": "Exodus", "levitico": "Leviticus", "mga bilang": "Numbers", "deuteronomio": "Deuteronomy",
+            "josue": "Joshua", "mga hukom": "Judges", "rut": "Ruth", "isaias": "Isaiah",
+            "jeremias": "Jeremiah", "hebreo": "Hebrews", "santiago": "James"
+        };
+
+        let currentBook = "John";
+        let currentChapter = 3;
+        let fontSize = 1.15;
+        let currentPassageRef = "";
+
+        function openApp() {
+            document.getElementById('coverPage').classList.add('hidden');
+        }
+
+        function showCover() {
+            document.getElementById('coverPage').classList.remove('hidden');
+        }
+
+        function init() {
+            populateBooks();
+            loadBookmarks();
+            fetchPassage();
+        }
+
+        function populateBooks() {
+            const select = document.getElementById('bookSelect');
+            select.innerHTML = '';
+            BOOKS.forEach(book => {
+                const opt = document.createElement('option');
+                opt.value = book;
+                opt.innerText = book;
+                if (book === currentBook) opt.selected = true;
+                select.appendChild(opt);
+            });
+            document.getElementById('chapterInput').value = currentChapter;
+        }
+
+        async function fetchPassage(customQuery = null) {
+            const container = document.getElementById('passageContent');
+            container.innerHTML = '<div class="loading">Loading scripture...</div>';
+
+            const translation = document.getElementById('translationSelect').value;
+            let query = customQuery || `${currentBook} ${currentChapter}`;
+
+            try {
+                if (translation === 'tagalog') {
+                    // Fetch Tagalog translation from fallback public API endpoint
+                    await fetchTagalogPassage(query);
+                } else {
+                    const response = await fetch(`https://bible-api.com/${encodeURIComponent(query)}?translation=${translation}`);
+                    if (!response.ok) throw new Error('Passage not found');
+                    
+                    const data = await response.json();
+
+                    if (data.book_name) {
+                        const matchedBook = BOOKS.find(b => b.toLowerCase() === data.book_name.toLowerCase());
+                        if (matchedBook) {
+                            currentBook = matchedBook;
+                            document.getElementById('bookSelect').value = matchedBook;
+                        }
+                    }
+                    if (data.chapter) {
+                        currentChapter = parseInt(data.chapter);
+                        document.getElementById('chapterInput').value = currentChapter;
+                    }
+
+                    renderPassage(data);
+                }
+            } catch (err) {
+                container.innerHTML = `<div class="error">Passage or book not found. Please check spelling (e.g. "John 3:16", "Romans", "Psalm 23").</div>`;
+            }
+        }
+
+        async function fetchTagalogPassage(query) {
+            const container = document.getElementById('passageContent');
+            try {
+                // Primary Tagalog fetch attempt
+                const res = await fetch(`https://bible-api.com/${encodeURIComponent(query)}?translation=tagalog`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.verses && data.verses.length > 0) {
+                        data.translation_name = "Ang Biblia (Tagalog)";
+                        renderPassage(data);
+                        return;
+                    }
+                }
+            } catch (e) {}
+
+            // Secondary Tagalog API Endpoint Fallback
+            try {
+                const res2 = await fetch(`https://ft-bible-api.vercel.app/api/v1/passage?ref=${encodeURIComponent(query)}&version=tagalog`);
+                if (res2.ok) {
+                    const data2 = await res2.json();
+                    const tagalogData = {
+                        reference: data2.reference || query,
+                        translation_name: "Ang Biblia (Tagalog 1905)",
+                        verses: data2.verses ? data2.verses.map(v => ({ verse: v.verse, text: v.text })) : []
+                    };
+                    renderPassage(tagalogData);
+                    return;
+                }
+            } catch (e) {}
+
+            // Third Fallback: Get structure in WEB English and auto-translate verse texts to Tagalog
+            const fallbackRes = await fetch(`https://bible-api.com/${encodeURIComponent(query)}?translation=web`);
+            if (!fallbackRes.ok) throw new Error('Passage not found');
+            const data = await fallbackRes.json();
+
+            container.innerHTML = '<div class="loading">Translating content to Tagalog...</div>';
+            
+            const translatedVerses = await Promise.all(
+                data.verses.map(async (v) => {
+                    try {
+                        const trRes = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=tl&dt=t&q=${encodeURIComponent(v.text.trim())}`);
+                        const trJson = await trRes.json();
+                        const tagalogText = trJson[0].map(item => item[0]).join('');
+                        return { verse: v.verse, text: tagalogText };
+                    } catch (err) {
+                        return { verse: v.verse, text: v.text };
+                    }
+                })
+            );
+
+            data.translation_name = "Ang Biblia (Tagalog Translation)";
+            data.verses = translatedVerses;
+            renderPassage(data);
+        }
+
+        function renderPassage(data) {
+            const container = document.getElementById('passageContent');
+            currentPassageRef = data.reference;
+
+            let html = `<div class="passage-title">${data.reference} <span style="font-size: 0.8rem; font-weight: normal; color: var(--subtext);">(${data.translation_name})</span></div>`;
+
+            if (data.verses && data.verses.length > 0) {
+                data.verses.forEach(v => {
+                    html += `<div class="verse"><span class="verse-num">${v.verse}</span>${escapeHtml(v.text.trim())}</div>`;
+                });
+            } else if (data.text) {
+                html += `<div class="verse">${escapeHtml(data.text.trim())}</div>`;
+            }
+
+            container.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        function onBookChange() {
+            currentBook = document.getElementById('bookSelect').value;
+            currentChapter = 1;
+            document.getElementById('chapterInput').value = 1;
+            fetchPassage();
+        }
+
+        function onChapterChange() {
+            const val = parseInt(document.getElementById('chapterInput').value);
+            if (val > 0) {
+                currentChapter = val;
+                fetchPassage();
+            }
+        }
+
+        function navigateChapter(delta) {
+            let newCh = currentChapter + delta;
+            if (newCh >= 1) {
+                currentChapter = newCh;
+                document.getElementById('chapterInput').value = currentChapter;
+                fetchPassage();
+            }
+        }
+
+        function handleSearchKey(e) {
+            if (e.key === 'Enter') performSearch();
+        }
+
+        function performSearch() {
+            let inputVal = document.getElementById('searchInput').value.trim();
+            if (!inputVal) return;
+
+            // Map Tagalog search input to English book name if applicable
+            let searchLower = inputVal.toLowerCase();
+            for (let [tagalogName, englishName] of Object.entries(TAGALOG_BOOKS_MAP)) {
+                if (searchLower.startsWith(tagalogName)) {
+                    inputVal = inputVal.replace(new RegExp(tagalogName, 'i'), englishName);
+                    break;
+                }
+            }
+
+            const matchedBook = BOOKS.find(b => b.toLowerCase() === inputVal.toLowerCase());
+            
+            if (matchedBook) {
+                currentBook = matchedBook;
+                currentChapter = 1;
+                document.getElementById('bookSelect').value = matchedBook;
+                document.getElementById('chapterInput').value = 1;
+                fetchPassage(`${matchedBook} 1`);
+            } else {
+                fetchPassage(inputVal);
+            }
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const btn = document.getElementById('themeToggle');
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                btn.innerText = 'Light';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                btn.innerText = 'Dark';
+            }
+        }
+
+        function toggleFont() {
+            const body = document.body;
+            const btn = document.getElementById('fontToggle');
+            body.classList.toggle('serif-mode');
+            btn.innerText = body.classList.contains('serif-mode') ? 'Calibri' : 'Serif';
+        }
+
+        function changeFontSize(delta) {
+            fontSize = Math.max(0.85, Math.min(1.8, fontSize + (delta * 0.1)));
+            document.getElementById('passageContent').style.fontSize = `${fontSize}rem`;
+        }
+
+        function bookmarkCurrent() {
+            if (!currentPassageRef) return;
+            let bookmarks = JSON.parse(localStorage.getItem('bible_bookmarks') || '[]');
+            if (!bookmarks.includes(currentPassageRef)) {
+                bookmarks.push(currentPassageRef);
+                localStorage.setItem('bible_bookmarks', JSON.stringify(bookmarks));
+                loadBookmarks();
+                showToast('Bookmark added');
+            } else {
+                showToast('Already bookmarked');
+            }
+        }
+
+        function loadBookmarks() {
+            const list = document.getElementById('bookmarksList');
+            let bookmarks = JSON.parse(localStorage.getItem('bible_bookmarks') || '[]');
+            
+            if (bookmarks.length === 0) {
+                list.innerHTML = '<div style="color: var(--subtext); font-size: 0.9rem;">No saved bookmarks.</div>';
+                return;
+            }
+
+            list.innerHTML = '';
+            bookmarks.forEach(ref => {
+                const item = document.createElement('div');
+                item.className = 'bookmark-item';
+                item.innerHTML = `
+                    <span onclick="fetchPassage('${ref}')">${ref}</span>
+                    <button onclick="removeBookmark('${ref}')">Remove</button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        function removeBookmark(ref) {
+            let bookmarks = JSON.parse(localStorage.getItem('bible_bookmarks') || '[]');
+            bookmarks = bookmarks.filter(b => b !== ref);
+            localStorage.setItem('bible_bookmarks', JSON.stringify(bookmarks));
+            loadBookmarks();
+            showToast('Bookmark removed');
+        }
+
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.innerText = msg;
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+        }
+
+        // Initialize App
+        window.onload = init;
+    </script>
+</body>
+</html>
